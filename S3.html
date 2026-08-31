@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Tutorials — S3 Service (Simple Storage Service)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0b0f17;
+            --bg-sidebar: #111827;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --bg-code: #0f172a;
+            --bg-quote: #1e1b4b;
+            --border-color: #1e293b;
+            --border-highlight: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent-aws: #ff9900;
+            --accent-aws-hover: #ffaa22;
+            --accent-cyan: #06b6d4;
+            --accent-indigo: #818cf8;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-purple: #a855f7;
+            --sidebar-width: 340px;
+            --header-height: 64px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: calc(var(--header-height) + 20px);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.7;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header.top-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+        }
+
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent-aws), #e67e00);
+            color: #000;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-page-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .service-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .service-tab {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .service-tab:hover {
+            color: var(--text-main);
+            background: rgba(255, 153, 0, 0.1);
+        }
+
+        .service-tab.active {
+            background: var(--accent-aws);
+            color: #000000;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Layout Container */
+        .app-layout {
+            display: flex;
+            width: 100%;
+            margin-top: var(--header-height);
+        }
+
+        /* Sidebar Navigation */
+        aside.sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: var(--header-height);
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            padding: 20px 16px;
+            z-index: 900;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        aside.sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        aside.sidebar::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .nav-video-group {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 8px;
+            transition: border-color 0.2s ease;
+        }
+
+        .nav-section-title {
+            color: var(--accent-aws);
+            font-weight: 700;
+            font-size: 13.5px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .nav-section-title:hover {
+            background: rgba(255, 153, 0, 0.1);
+        }
+
+        .nav-section-title .toggle-icon {
+            font-size: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-video-group.collapsed .nav-list {
+            display: none;
+        }
+
+        .nav-video-group.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .nav-list {
+            list-style: none;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-item a.nav-link {
+            display: block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 12.5px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-item a.nav-link:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+            padding-left: 16px;
+        }
+
+        .nav-item a.nav-link.active {
+            color: var(--accent-aws);
+            background: rgba(255, 153, 0, 0.15);
+            font-weight: 600;
+        }
+
+        /* Sidebar Search Box */
+        .sidebar-search-box {
+            position: sticky;
+            top: -20px;
+            z-index: 10;
+            background: var(--bg-sidebar);
+            padding: 4px 0 8px 0;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .sidebar-search-box input:focus {
+            border-color: var(--accent-aws);
+        }
+
+        .sidebar-search-box svg {
+            position: absolute;
+            left: 12px;
+            top: 15px;
+            fill: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Main Content Area */
+        main.main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 40px 48px 80px 48px;
+            max-width: 1200px;
+        }
+
+        .doc-header-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-aws);
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-block {
+            margin-bottom: 48px;
+            padding-top: 12px;
+        }
+
+        h1.section-heading {
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        blockquote {
+            background: var(--bg-quote);
+            border-left: 4px solid var(--accent-indigo);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            color: var(--text-main);
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 13.5px;
+            color: #e2e8f0;
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+            font-size: 13.5px;
+        }
+
+        .topic-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(255, 153, 0, 0.2);
+            color: var(--accent-aws);
+            font-weight: 600;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent-aws);
+            color: #000;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            z-index: 1000;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            background: var(--accent-aws-hover);
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 1024px) {
+            aside.sidebar {
+                transform: translateX(-100%);
+                width: 300px;
+            }
+
+            aside.sidebar.open {
+                transform: translateX(0);
+            }
+
+            main.main-content {
+                margin-left: 0;
+                padding: 24px 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Header -->
+    <header class="top-header">
+        <div class="header-title-group">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+            <span class="brand-badge">AWS TUTORIALS</span>
+            <span class="header-page-title">AWS S3 Service Library</span>
+        </div>
+        <div class="service-tabs">
+            <a href="EC2.html" class="service-tab">🖥️ EC2 Service</a>
+            <a href="IAM.html" class="service-tab">🔑 IAM Service</a>
+            <a href="S3.html" class="service-tab active">🪣 S3 Service</a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+
+            <!-- Sidebar Search Box -->
+            <div class="sidebar-search-box">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="sidebarSearchInput" placeholder="🔍 Search S3 Video # (e.g., 59, Bucket, Glacier)...">
+            </div>
+
+            <!-- Video 59 S3 Group -->
+            <div class="nav-video-group" id="group-v59-s3">
+                <div class="nav-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span>AWS Tutorials - 59 - Introduction to Amazon Simple Storage Service (S3) | AWS S3 Service (in Hindi)</span>
+                        <span class="topic-badge">18 topics</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <ul class="nav-list" id="navListV59S3">
+                    <li class="nav-item"><a href="#v59s3-section-1" class="nav-link">1. 🎯 What You'll Learn</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-2" class="nav-link">2. 🪣 What is Amazon S3?</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-3" class="nav-link">3. 💻 Developer Use Cases</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-4" class="nav-link">4. 🛠️ DevOps Use Cases</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-5" class="nav-link">5. 💰 Storage Classes &amp; Hospital Records</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-6" class="nav-link">6. ❄️ Standard vs IA vs Glacier Archive</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-7" class="nav-link">7. 🌐 Static Website Hosting on S3</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-8" class="nav-link">8. 📦 Software Distribution &amp; Data Lakes</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-9" class="nav-link">9. 💵 AWS S3 Pricing Model Breakdown</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-10" class="nav-link">10. 🔄 "Requester Pays" Buckets Scenario</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-11" class="nav-link">11. 🌏 S3 Bucket Architecture</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-12" class="nav-link">12. ⚠️ Global Unique Bucket Naming Rule</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-13" class="nav-link">13. 📄 Objects vs Files (Metadata &amp; Keys)</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-14" class="nav-link">14. 📊 Storage Class &amp; Pricing Matrix</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-15" class="nav-link">15. 🎓 Senior Developer Scope</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-16" class="nav-link">16. ❓ Interview Questions</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-17" class="nav-link">17. 🏁 Completion Criteria &amp; Mental Model</a></li>
+                    <li class="nav-item"><a href="#v59s3-section-completion" class="nav-link">✅ Video 59 Complete</a></li>
+                </ul>
+            </div>
+
+            <!-- Video 60 S3 Create First Bucket Group -->
+            <div class="nav-video-group" id="group-v60-s3">
+                <div class="nav-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span>AWS Tutorials - 60 How to Create Bucket in AWS | Create S3 Bucket | Create First Bucket ( in Hindi)</span>
+                        <span class="topic-badge">18 topics</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <ul class="nav-list" id="navListV60S3">
+                    <li class="nav-item"><a href="#v60s3-section-1" class="nav-link">1. 🎯 What You'll Learn</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-2" class="nav-link">2. 🎬 Behind-the-Scenes S3 Usage</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-3" class="nav-link">3. 🪣 Step 1 — Navigating to S3 Console</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-4" class="nav-link">4. ⚠️ Step 2 — Bucket Naming Collision Test</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-5" class="nav-link">5. 🌏 Step 3 — Region &amp; Ownership</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-6" class="nav-link">6. 🔒 Step 4 — Block Public Access Shield</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-7" class="nav-link">7. 🔑 Step 5 — Versioning &amp; Encryption</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-8" class="nav-link">8. 🛠️ Step 6 — Creating Bucket</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-9" class="nav-link">9. 📤 Step 7 — Uploading Objects</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-10" class="nav-link">10. 📄 Objects vs Files in S3</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-11" class="nav-link">11. 🔓 Method 1 — Presigned Open Access</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-12" class="nav-link">12. 🚫 Method 2 — Direct HTTPS AccessDenied</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-13" class="nav-link">13. 🔍 Default-Deny Privacy Architecture</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-14" class="nav-link">14. 📧 Instructor Support Guidelines</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-15" class="nav-link">15. 📊 Open vs Direct URL Matrix</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-16" class="nav-link">16. 🎓 Senior Developer Scope</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-17" class="nav-link">17. ❓ Interview Questions</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-18" class="nav-link">18. 🏁 Completion Criteria &amp; Mental Model</a></li>
+                    <li class="nav-item"><a href="#v60s3-section-completion" class="nav-link">✅ Video 60 Complete</a></li>
+                </ul>
+            </div>
+
+            <!-- Video 61 S3 Public Bucket & Bucket Policies Group -->
+            <div class="nav-video-group" id="group-v61-s3">
+                <div class="nav-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span>AWS Tutorials - 61 Public your Bucket Object | Policy Generator | Allow Object to Public ( in Hindi)</span>
+                        <span class="topic-badge">18 topics</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <ul class="nav-list" id="navListV61S3">
+                    <li class="nav-item"><a href="#v61s3-section-1" class="nav-link">1. 🎯 What You'll Learn</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-2" class="nav-link">2. ⚠️ Deep-Dive S3 Naming Rules &amp; Violations</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-3" class="nav-link">3. 🔓 The Goal — Public Read HTTPS Access</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-4" class="nav-link">4. 🛡️ Step 1 — Disabling Block Public Access</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-5" class="nav-link">5. ⚡ Step 2 — Opening Policy Generator</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-6" class="nav-link">6. 📜 Step 3 — Policy Generator Inputs</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-7" class="nav-link">7. ❌ The Common ARN Formatting Trap</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-8" class="nav-link">8. 📄 Valid Public Read Bucket Policy JSON</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-9" class="nav-link">9. 💾 Step 4 — Saving Policy &amp; Public Badge</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-10" class="nav-link">10. 🧪 Test 1 — Incognito HTTPS Verification</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-11" class="nav-link">11. 📤 Test 2 — Uploading New Photo</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-12" class="nav-link">12. 🔑 Presigned vs Static Public HTTPS URLs</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-13" class="nav-link">13. 🛡️ Security Warning — Governance Rules</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-14" class="nav-link">14. 📊 Bucket Policy Configuration Matrix</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-15" class="nav-link">15. 🎓 Senior Developer Scope</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-16" class="nav-link">16. ❓ Interview Questions</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-17" class="nav-link">17. 🏁 Completion Criteria &amp; Mental Model</a></li>
+                    <li class="nav-item"><a href="#v61s3-section-completion" class="nav-link">✅ Video 61 Complete</a></li>
+                </ul>
+            </div>
+
+            <!-- Video 62 S3 Object Properties, Metadata, Key & Prefixes Group -->
+            <div class="nav-video-group" id="group-v62-s3">
+                <div class="nav-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span>AWS Tutorials - 62 S3 Object - S3 Object Properties - S3 Object Metadata - S3 Object Key ( in Hindi)</span>
+                        <span class="topic-badge">18 topics</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <ul class="nav-list" id="navListV62S3">
+                    <li class="nav-item"><a href="#v62s3-section-1" class="nav-link">1. 🎯 What You'll Learn</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-2" class="nav-link">2. 🔍 Navigating Object Properties</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-3" class="nav-link">3. 🏷️ Object Tags &amp; Lifecycle Teaser</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-4" class="nav-link">4. 📊 System vs User-Defined Metadata</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-5" class="nav-link">5. 🧩 What is an ETag in Amazon S3?</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-6" class="nav-link">6. 🔑 Demystifying the "S3 Object Key"</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-7" class="nav-link">7. 📁 Myth: "Folders Do Not Exist"</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-8" class="nav-link">8. ⚡ Console Virtual Folder Simulation</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-9" class="nav-link">9. 🧪 Root vs Subfolder Upload Test</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-10" class="nav-link">10. 🧪 Nested Virtual Folders Test</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-11" class="nav-link">11. 🎯 Why Object Prefixes Matter</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-12" class="nav-link">12. 📦 5 GB Single PUT Upload Limit</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-13" class="nav-link">13. 🚀 Multipart Upload Architecture</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-14" class="nav-link">14. 📊 Key vs Directory Hierarchy Matrix</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-15" class="nav-link">15. 🎓 Senior Developer Scope</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-16" class="nav-link">16. ❓ Interview Questions</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-17" class="nav-link">17. 🏁 Completion Criteria &amp; Mental Model</a></li>
+                    <li class="nav-item"><a href="#v62s3-section-completion" class="nav-link">✅ Video 62 Complete</a></li>
+                </ul>
+            </div>
+
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- ==================== VIDEO 59 S3 INTRODUCTION CONTENT ==================== -->
+
+            <!-- Video 59 Header -->
+            <div class="doc-header-card" id="v59s3-header">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                    <span class="brand-badge" style="background: var(--accent-aws); color: #000;">AWS TUTORIALS — VIDEO 59</span>
+                    <span style="font-size: 13px; color: var(--text-muted);">Prerequisite: None (S3 Core Module 1)</span>
+                </div>
+                <h1 style="font-size: 32px; color: var(--text-main); margin-bottom: 12px; line-height: 1.3;">AWS Tutorials - 59 - Introduction to Amazon Simple Storage Service (S3) | AWS S3 Service (in Hindi)</h1>
+                <p style="font-size: 16px; color: var(--text-muted);"><strong>Main topic:</strong> Introduction to Amazon Simple Storage Service (S3), Object Storage vs Block Storage, Virtually Infinite Capacity, Developer Use Cases (Stateless web apps, high-speed video streaming), DevOps Use Cases (Terraform `.tfstate` remote backends, CI/CD build artifacts, Object Versioning), Storage Tiers &amp; Cost Optimization (S3 Standard, Infrequent Access IA, Glacier Deep Archive for 20-year hospital prescriptions), Static Website Hosting (HTML/CSS/JS without EC2), Software Distribution, Big Data Analytics, S3 Pricing Model (Storage GB + Outbound Bandwidth + API Requests), "Requester Pays" Buckets (50 GB video course download scenario), and Global Unique Bucket Naming Rules.</p>
+            </div>
+
+            <!-- v59s3 1. What You'll Learn -->
+            <div class="section-block" id="v59s3-section-1">
+                <h1 class="section-heading">1. 🎯 What You'll Learn</h1>
+                <p>By the end of this video, you should understand:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>What **Amazon S3 (Simple Storage Service)** is and why it is a core foundational pillar of AWS</li>
+                    <li>Understanding S3 **Infinite Capacity**: Storing virtually unlimited data without provisioning disk sizes</li>
+                    <li>**DEVELOPER USE CASES:** Building Stateless Web Applications and high-throughput video streaming platforms</li>
+                    <li>**DEVOPS USE CASES:** Storing Terraform `.tfstate` remote locks, CI/CD compiled build packages (`.jar`, `.war`), and Object Versioning</li>
+                    <li>Storage Tiering &amp; Cost Optimization: Hospital 20-year medical prescription retention case study</li>
+                    <li>**S3 STORAGE CLASSES:** S3 Standard, S3 Standard-IA, and S3 Glacier / Glacier Deep Archive</li>
+                    <li>Hosting Static HTML/CSS/JS Websites on S3 without running EC2 web servers</li>
+                    <li>Software Delivery distribution &amp; Big Data analytics storage lakes</li>
+                    <li>**AWS S3 PRICING MODEL:** Storage Capacity (GB/mo) + Outbound Bandwidth Transfer + API Requests (GET/PUT)</li>
+                    <li>**"REQUESTER PAYS" BUCKETS:** Delegating 50 GB course download bandwidth costs directly to buyer AWS accounts</li>
+                    <li>**CRITICAL GLOBAL NAMING RULE:** Why S3 Bucket Names must be **Globally Unique across all AWS accounts worldwide**</li>
+                </ul>
+            </div>
+
+            <!-- v59s3 2. What is Amazon S3? -->
+            <div class="section-block" id="v59s3-section-2">
+                <h1 class="section-heading">2. 🪣 What is Amazon S3? (Simple Storage Service &amp; Infinite Capacity)</h1>
+                <p>Instructor Gaurav Sharma's Core Service Definition:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid var(--accent-aws); border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: var(--text-main);"><strong>Virtually Infinite Object Storage:</strong></p>
+                    <p style="margin-top: 6px; margin-bottom: 0; color: var(--text-muted);">
+                        "Amazon S3 stands for **Simple Storage Service**. It is an object storage service offering industry-leading scalability, data availability, security, and performance.
+                        <br>AWS claims that S3 provides **virtually infinite data storage capacity**—you can store as much data as you want without ever pre-allocating volume sizes or running out of disk space!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- v59s3 3. Developer Use Cases -->
+            <div class="section-block" id="v59s3-section-3">
+                <h1 class="section-heading">3. 💻 Developer Use Cases — Stateless Architecture &amp; Media Streaming</h1>
+                <p>Application Developer Implementation Scenarios:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>Stateless Web Application Architecture:</strong> Offloading user-uploaded profile pictures and documents from EC2 web servers directly to S3. If an EC2 server crashes or auto-scales down, zero user files are lost!</li>
+                    <li><strong>High-Speed Video Streaming Platforms:</strong> Storing heavy video media assets on S3 to leverage high-throughput HTTP GET retrievals and CloudFront CDN integration.</li>
+                </ul>
+            </div>
+
+            <!-- v59s3 4. DevOps Use Cases -->
+            <div class="section-block" id="v59s3-section-4">
+                <h1 class="section-heading">4. 🛠️ DevOps Use Cases — Terraform `.tfstate` &amp; CI/CD Build Artifacts</h1>
+                <p>Infrastructure &amp; CI/CD Pipeline Integration:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>Terraform Remote State (`.tfstate`):</strong> Storing shared infrastructure state files in an S3 bucket with S3 State Locking via DynamoDB.</li>
+                    <li><strong>CI/CD Artifact Repository:</strong> Storing compiled application build binaries (`.jar`, `.war`, `.zip`) with **S3 Object Versioning** enabled to preserve historical build history.</li>
+                </ul>
+            </div>
+
+            <!-- v59s3 5. Storage Classes & Hospital Records -->
+            <div class="section-block" id="v59s3-section-5">
+                <h1 class="section-heading">5. 💰 Storage Classes &amp; 20-Year Hospital Record Cost Optimization</h1>
+                <p>Real-World Retention Cost Dilemma:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #ef4444; font-weight: bold;">THE 20-YEAR DATA RETENTION COST PROBLEM:</p>
+                    <p style="margin-top: 6px; margin-bottom: 0; color: var(--text-muted);">
+                        "Imagine a hospital or hotel that has been generating patient prescriptions or billing receipts for 20 years. Legally, the hospital must retain 20 years of medical records.
+                        <br>If all 20 years of data are stored in active high-cost storage, the monthly bill would be astronomical!
+                        <br><strong>The Solution:</strong> Move old records to cheaper S3 Storage Tiers as data ages!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- v59s3 6. Standard vs IA vs Glacier Archive -->
+            <div class="section-block" id="v59s3-section-6">
+                <h1 class="section-heading">6. ❄️ S3 Standard vs Standard-IA vs Glacier Deep Archive</h1>
+                <p>Tiering Access Profiles:</p>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>S3 Standard:</strong> High frequency access, millisecond retrieval, active web files.</li>
+                    <li><strong>S3 Standard-IA (Infrequent Access):</strong> Lower storage cost, small retrieval fee for files accessed once every few months.</li>
+                    <li><strong>S3 Glacier / Glacier Deep Archive:</strong> Lowest cost storage vault for multi-year archival (retrieval takes 3-5 hours or minutes via expedited mode).</li>
+                </ol>
+            </div>
+
+            <!-- v59s3 7. Static Website Hosting on S3 -->
+            <div class="section-block" id="v59s3-section-7">
+                <h1 class="section-heading">7. 🌐 Static Website Hosting on S3 (HTML/CSS/JS without EC2)</h1>
+                <p>Zero-Server Web Hosting:</p>
+                <blockquote style="border-left: 4px solid var(--accent-aws); padding-left: 14px; color: var(--text-muted);">
+                    "If your website is static (composed of HTML5, CSS3, JavaScript, images, and fonts with no backend server code rendering), you can host the website directly on an Amazon S3 bucket without launching or paying for EC2 web instances!"
+                </blockquote>
+            </div>
+
+            <!-- v59s3 8. Software Distribution & Data Lakes -->
+            <div class="section-block" id="v59s3-section-8">
+                <h1 class="section-heading">8. 📦 Software Distribution &amp; Big Data Analytics Storage Lakes</h1>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>Software Delivery Point:</strong> Host installer `.exe`, `.dmg`, `.deb` software packages for public or authenticated user downloads.</li>
+                    <li><strong>Big Data Analytics Data Lakes:</strong> Store petabytes of unstructured raw data for querying with Amazon Athena, EMR, or Redshift.</li>
+                </ul>
+            </div>
+
+            <!-- v59s3 9. AWS S3 Pricing Model Breakdown -->
+            <div class="section-block" id="v59s3-section-9">
+                <h1 class="section-heading">9. 💵 AWS S3 Pricing Model Breakdown (Storage + Bandwidth + API Requests)</h1>
+                <p>The 3 Pillars of S3 Billing:</p>
+<pre><code>                    Total Monthly AWS S3 Bill
+                               │
+       ┌───────────────────────┼───────────────────────┐
+       ▼                       ▼                       ▼
+1. Storage Capacity     2. Outbound Bandwidth   3. API Requests
+(GB / Month Stored)    (Data Transferred Out)   (GET / PUT / LIST)</code></pre>
+            </div>
+
+            <!-- v59s3 10. "Requester Pays" Buckets Scenario -->
+            <div class="section-block" id="v59s3-section-10">
+                <h1 class="section-heading">10. 🔄 "Requester Pays" Buckets — 50 GB Course Bandwidth Cost Delegation</h1>
+                <p>Instructor Gaurav Sharma's Real Bandwidth Delegation Scenario:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid var(--accent-cyan); border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: var(--text-main); font-weight: bold;">THE BANDWIDTH COST DELEGATION PATTERN:</p>
+                    <p style="margin-top: 6px; margin-bottom: 0; color: var(--text-muted);">
+                        "Suppose I sell a 50 GB video course. Hosting 50 GB on S3 costs very little, but if 1,000 buyers download 50 GB each (50,000 GB outbound bandwidth), AWS would charge ME thousands of dollars!
+                        <br><strong>Solution: Enable 'Requester Pays'!</strong>
+                        <br>When Requester Pays is enabled on the S3 bucket, the buyer must authenticate with their own AWS credentials, and **AWS automatically charges the 50 GB download bandwidth cost to the BUYER'S AWS account**, not mine!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- v59s3 11. S3 Bucket Architecture -->
+            <div class="section-block" id="v59s3-section-11">
+                <h1 class="section-heading">11. 🌏 S3 Bucket Architecture &amp; Regional Placement</h1>
+                <p>Containers &amp; Region Selection:</p>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Data in S3 is stored in top-level containers called **Buckets**.</li>
+                    <li>Every S3 bucket is created in a specific AWS Region (e.g., `ap-south-1` Mumbai or `us-east-1` N. Virginia).</li>
+                </ol>
+            </div>
+
+            <!-- v59s3 12. Global Unique Bucket Naming Rule -->
+            <div class="section-block" id="v59s3-section-12">
+                <h1 class="section-heading">12. ⚠️ Global Unique Bucket Naming Rule (`BucketAlreadyExists` Constraint)</h1>
+                <p>The #1 S3 Golden Rule:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #ef4444; font-weight: bold;">MUST-KNOW S3 BUCKET NAMING RULE:</p>
+                    <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted);">Even though an S3 bucket is created in a specific region, **S3 BUCKET NAMES MUST BE GLOBALLY UNIQUE ACROSS ALL AWS ACCOUNTS WORLDWIDE IN ALL REGIONS!**
+                    <br>If User A creates a bucket named `my-company-backup` in N. Virginia, NO user anywhere on Earth can create a bucket named `my-company-backup` in Mumbai or any other region! AWS returns `BucketAlreadyExists` error.</p>
+                </div>
+            </div>
+
+            <!-- v59s3 13. Objects vs Files -->
+            <div class="section-block" id="v59s3-section-13">
+                <h1 class="section-heading">13. 📄 Objects vs Files (Metadata, Keys &amp; Object URLs)</h1>
+                <p>Object Architecture:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Files stored in S3 are called **Objects** (up to 5 TB max per single object).</li>
+                    <li>An Object consists of: <strong>Key</strong> (filename/path), <strong>Value</strong> (data bytes), <strong>Metadata</strong> (content-type, tags), and a unique <strong>Object URL</strong>.</li>
+                </ul>
+            </div>
+
+            <!-- v59s3 14. Storage Class & Pricing Matrix -->
+            <div class="section-block" id="v59s3-section-14">
+                <h1 class="section-heading">14. 📊 Storage Class &amp; Pricing Matrix</h1>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;">
+                        <thead>
+                            <tr style="background: var(--bg-card); border-bottom: 2px solid var(--border-color); color: var(--accent-aws);">
+                                <th style="padding: 10px;">Storage Class</th>
+                                <th style="padding: 10px;">Access Frequency</th>
+                                <th style="padding: 10px;">Retrieval Time</th>
+                                <th style="padding: 10px;">Storage Cost / GB</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">S3 Standard</td>
+                                <td style="padding: 10px;">Frequent (Daily)</td>
+                                <td style="padding: 10px; color: #10b981;">Milliseconds</td>
+                                <td style="padding: 10px;">Highest (~$0.023 / GB)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">S3 Standard-IA</td>
+                                <td style="padding: 10px;">Infrequent (Once/month)</td>
+                                <td style="padding: 10px; color: #10b981;">Milliseconds</td>
+                                <td style="padding: 10px; color: #10b981;">Lower (~$0.0125 / GB)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">S3 Glacier Deep Archive</td>
+                                <td style="padding: 10px;">Rare Archival (1-2x/yr)</td>
+                                <td style="padding: 10px; color: #f59e0b;">12 Hours</td>
+                                <td style="padding: 10px; color: #10b981; font-weight: bold;">Lowest (~$0.00099 / GB)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- v59s3 15. Senior Developer Scope -->
+            <div class="section-block" id="v59s3-section-15">
+                <h1 class="section-heading">15. 🎓 Senior Developer Scope</h1>
+                <p><strong>MUST KNOW:</strong></p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Offloading user file uploads to S3 for stateless web app design.</li>
+                    <li>S3 bucket global unique naming rules.</li>
+                    <li>S3 storage class selection for cost optimization (Standard, IA, Glacier).</li>
+                    <li>Configuring Requester Pays for bandwidth cost delegation.</li>
+                    <li>Static website hosting directly on S3 buckets.</li>
+                </ul>
+            </div>
+
+            <!-- v59s3 16. Interview Questions -->
+            <div class="section-block" id="v59s3-section-16">
+                <h1 class="section-heading">16. ❓ Interview Questions</h1>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q1. What is the global naming requirement for Amazon S3 Buckets?</strong></p>
+                    <blockquote>S3 Bucket Names must be globally unique across all AWS accounts worldwide in all regions. No two AWS accounts on Earth can share the same S3 bucket name.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q2. How does Amazon S3 help in building stateless web applications?</strong></p>
+                    <blockquote>By storing user-uploaded files and media in S3 instead of local EC2 server disks, web nodes remain stateless and can be scaled, terminated, or replaced without losing application data.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q3. What is the "Requester Pays" feature in Amazon S3?</strong></p>
+                    <blockquote>Requester Pays shifts the network data transfer (download bandwidth) costs from the bucket owner to the requesting user's AWS account.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q4. What is the maximum size of a single object that can be stored in Amazon S3?</strong></p>
+                    <blockquote>The maximum size of a single object in Amazon S3 is 5 Terabytes (5 TB).</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q5. How can you minimize storage costs for multi-year regulatory data (e.g. 20-year medical records)?</strong></p>
+                    <blockquote>By configuring S3 Lifecycle Policies to transition data from S3 Standard to S3 Standard-IA, and finally archiving to S3 Glacier Deep Archive for ultra-low storage cost.</blockquote>
+                </div>
+            </div>
+
+            <!-- v59s3 17. Completion Criteria & Final Mental Model -->
+            <div class="section-block" id="v59s3-section-17">
+                <h1 class="section-heading">17. 🏁 Completion Criteria &amp; Final Mental Model</h1>
+                <p><strong>Amazon S3 Ecosystem Architecture:</strong></p>
+<pre><code>                    Global Unique Namespace: `my-global-unique-bucket`
+                                       │
+                ┌──────────────────────┴──────────────────────┐
+                ▼                                             ▼
+       Stateless Web Apps                            DevOps &amp; Security
+   (Images / Video Streaming)                    (Terraform `.tfstate` / CI/CD)
+                │                                             │
+                └──────────────────────┬──────────────────────┘
+                                       ▼
+                             S3 Storage Lifecycle
+                  (Standard ➔ Standard-IA ➔ Glacier Archive)</code></pre>
+            </div>
+
+            <!-- VIDEO 59 COMPLETE Card -->
+            <div class="doc-header-card" id="v59s3-section-completion" style="margin-top: 40px; border-color: var(--accent-aws);">
+                <h2 style="font-size: 26px; color: var(--accent-aws); margin-bottom: 16px;">✅ VIDEO 59 — COMPLETE</h2>
+                <h3 style="font-size: 18px; color: var(--text-main); margin-bottom: 12px;">AWS S3 Service Takeaway</h3>
+                <p>Amazon S3 delivers virtually infinite object storage, stateless web app architecture, cost-optimized lifecycle tiering, and global unique namespace storage governance.</p>
+            </div>
+
+            <!-- ==================== VIDEO 60 CREATE FIRST S3 BUCKET & UPLOAD OBJECTS ==================== -->
+
+            <!-- Video 60 Header -->
+            <div class="doc-header-card" id="v60s3-header" style="margin-top: 60px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                    <span class="brand-badge" style="background: var(--accent-aws); color: #000;">AWS TUTORIALS — VIDEO 60</span>
+                    <span style="font-size: 13px; color: var(--text-muted);">Prerequisite: Video 59 S3 Intro</span>
+                </div>
+                <h1 style="font-size: 32px; color: var(--text-main); margin-bottom: 12px; line-height: 1.3;">AWS Tutorials - 60 How to Create Bucket in AWS | Create S3 Bucket | Create First Bucket ( in Hindi)</h1>
+                <p style="font-size: 16px; color: var(--text-muted);"><strong>Main topic:</strong> Behind-the-Scenes AWS S3 usage (EBS Snapshots &amp; Custom AMI storage), step-by-step S3 bucket creation in AWS Console, bucket naming collision testing (`gaurav` vs `gaurav-youtube-v1`), bucket settings (Region, Object Ownership, Block Public Access, Versioning, Default Encryption SSE-S3), uploading files/objects via drag &amp; drop, accessing objects via Console Presigned "Open" button vs direct HTTPS URL (`AccessDenied` 403 Forbidden default error), and instructor support guidelines (`gaurav@learningocean.com`).</p>
+            </div>
+
+            <!-- v60s3 1. What You'll Learn -->
+            <div class="section-block" id="v60s3-section-1">
+                <h1 class="section-heading">1. 🎯 What You'll Learn</h1>
+                <p>By the end of this video, you should understand:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>How AWS uses S3 behind the scenes for storing **EBS Snapshots** and **Custom AMIs**</li>
+                    <li>How to navigate the AWS Console to create your **first S3 Bucket**</li>
+                    <li>Experiencing the **Global Unique Naming Collision**: Why bucket name `gaurav` fails and `gaurav-youtube-v1` succeeds</li>
+                    <li>Configuring S3 Bucket options: AWS Region, Object Ownership, Block Public Access, Versioning, and Encryption</li>
+                    <li>Understanding **Default Encryption**: SSE-S3 (AES-256) enabled by default</li>
+                    <li>Uploading files and images into S3 buckets using drag &amp; drop / file browser</li>
+                    <li>Understanding **S3 Objects**: Files stored as key-value objects</li>
+                    <li><strong>METHOD 1:</strong> Opening objects via the AWS Console "Open" button (presigned session URL)</li>
+                    <li><strong>METHOD 2:</strong> Pasting direct Object HTTPS URLs and analyzing the **`AccessDenied` HTTP 403 Error**</li>
+                    <li>Why S3 objects are 100% private by default (Default-Deny Privacy Architecture)</li>
+                    <li>Instructor email support policy (<code>gaurav@learningocean.com</code>)</li>
+                </ul>
+            </div>
+
+            <!-- v60s3 2. Behind-the-Scenes S3 Usage -->
+            <div class="section-block" id="v60s3-section-2">
+                <h1 class="section-heading">2. 🎬 Behind-the-Scenes AWS S3 Usage (EBS Snapshots &amp; AMI Storage)</h1>
+                <p>Instructor Gaurav Sharma's AWS Architecture Recap:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid var(--accent-aws); border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: var(--text-main);"><strong>Did we use S3 in previous EC2 video tutorials?</strong></p>
+                    <p style="margin-top: 6px; margin-bottom: 0; color: var(--text-muted);">
+                        "YES! Whenever you create an **EBS Snapshot** or back up an EC2 instance into a **Custom AMI**, AWS automatically compresses and stores those snapshot volume blocks inside **AWS-managed hidden S3 buckets** behind the scenes!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- v60s3 3. Step 1 — Navigating to S3 Console -->
+            <div class="section-block" id="v60s3-section-3">
+                <h1 class="section-heading">3. 🪣 Step 1 — Navigating to S3 Console Dashboard</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>AWS Management Console → Top search bar → Type <strong>"S3"</strong>.</li>
+                    <li>Click <strong>S3 (Scalable Storage in the Cloud)</strong>.</li>
+                    <li>S3 Dashboard opens → Buckets list initially shows 0 buckets → Click <strong>Create bucket</strong>.</li>
+                </ol>
+            </div>
+
+            <!-- v60s3 4. Step 2 — Naming Collision Test -->
+            <div class="section-block" id="v60s3-section-4">
+                <h1 class="section-heading">4. ⚠️ Step 2 — Bucket Naming Collision Test (`gaurav` vs `gaurav-youtube-v1`)</h1>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #ef4444; font-weight: bold;">TEST 1 — BUCKET NAME "gaurav":</p>
+                    <p style="margin-top: 4px; margin-bottom: 8px; color: var(--text-muted);">Enter bucket name <code>gaurav</code> → Scroll down &amp; click Create bucket → <strong>FAIL! Error: Bucket with the same name already exists!</strong> (Proves global uniqueness rule across all AWS accounts worldwide!).</p>
+                    <p style="margin: 0; color: #10b981; font-weight: bold;">TEST 2 — BUCKET NAME "gaurav-youtube-v1":</p>
+                    <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted);">Enter bucket name <code>gaurav-youtube-v1</code> → Name accepted successfully!</p>
+                </div>
+            </div>
+
+            <!-- v60s3 5. Step 3 — Region & Ownership -->
+            <div class="section-block" id="v60s3-section-5">
+                <h1 class="section-heading">5. 🌏 Step 3 — Selecting AWS Region &amp; Object Ownership Settings</h1>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>AWS Region:</strong> Select target geographic region (e.g. `ap-south-1` Mumbai).</li>
+                    <li><strong>Object Ownership:</strong> ACLs disabled (recommended). The bucket owner owns all objects in the bucket.</li>
+                </ul>
+            </div>
+
+            <!-- v60s3 6. Step 4 — Block Public Access Shield -->
+            <div class="section-block" id="v60s3-section-6">
+                <h1 class="section-heading">6. 🔒 Step 4 — Understanding "Block Public Access" Default Privacy Shield</h1>
+                <p>Default Security Guardrail:</p>
+                <blockquote style="border-left: 4px solid var(--accent-aws); padding-left: 14px; color: var(--text-muted);">
+                    "By default, AWS checks 'Block all public access'. This ensures your newly created S3 bucket is 100% private, blocking any public internet access to your uploaded files until explicitly modified!"
+                </blockquote>
+            </div>
+
+            <!-- v60s3 7. Step 5 — Versioning & Encryption -->
+            <div class="section-block" id="v60s3-section-7">
+                <h1 class="section-heading">7. 🔑 Step 5 — Bucket Versioning, Tags &amp; SSE-S3 Encryption Settings</h1>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>Bucket Versioning:</strong> Disabled (default for initial bucket creation).</li>
+                    <li><strong>Default Encryption:</strong> Server-Side Encryption with Amazon S3 managed keys (SSE-S3 / AES-256) enabled automatically.</li>
+                </ul>
+            </div>
+
+            <!-- v60s3 8. Step 6 — Creating Bucket -->
+            <div class="section-block" id="v60s3-section-8">
+                <h1 class="section-heading">8. 🛠️ Step 6 — Creating the Bucket (`gaurav-youtube-v1`)</h1>
+                <p>Click <strong>Create bucket</strong> → Success notification: <em>"Successfully created bucket 'gaurav-youtube-v1'"</em> appears in S3 Console list!</p>
+            </div>
+
+            <!-- v60s3 9. Step 7 — Uploading Objects -->
+            <div class="section-block" id="v60s3-section-9">
+                <h1 class="section-heading">9. 📤 Step 7 — Uploading Files / Objects via Drag &amp; Drop</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Click on bucket name <code>gaurav-youtube-v1</code>.</li>
+                    <li>Click <strong>Upload</strong> button.</li>
+                    <li>Click <strong>Add files</strong> or drag &amp; drop a file from your local computer into the browser.</li>
+                    <li>Click <strong>Upload</strong> at the bottom → File uploads successfully!</li>
+                </ol>
+            </div>
+
+            <!-- v60s3 10. Objects vs Files in S3 -->
+            <div class="section-block" id="v60s3-section-10">
+                <h1 class="section-heading">10. 📄 Objects vs Files in S3</h1>
+                <p>Terminology Standard: Files inside S3 buckets are formally called **Objects**. Every object holds data bytes, key name, metadata, and permissions.</p>
+            </div>
+
+            <!-- v60s3 11. Method 1 — Presigned Open Access -->
+            <div class="section-block" id="v60s3-section-11">
+                <h1 class="section-heading">11. 🔓 Method 1 — Presigned Console "Open" Button Access</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Select uploaded object checkbox in S3 Console.</li>
+                    <li>Click <strong>Open</strong> in top action bar.</li>
+                    <li>File opens cleanly in a new browser tab!</li>
+                    <li><strong>Why?</strong> The "Open" button generates a temporary authenticated **Presigned URL** signed with your active console session credentials!</li>
+                </ol>
+            </div>
+
+            <!-- v60s3 12. Method 2 — Direct HTTPS AccessDenied -->
+            <div class="section-block" id="v60s3-section-12">
+                <h1 class="section-heading">12. 🚫 Method 2 — Direct Object HTTPS URL &amp; `AccessDenied` 403 Error</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Click on uploaded object name to open Object Overview.</li>
+                    <li>Copy **Object URL** (e.g. <code>https://gaurav-youtube-v1.s3.ap-south-1.amazonaws.com/image.png</code>).</li>
+                    <li>Paste URL into browser address bar → Press Enter.</li>
+                    <li>**RESULT:** <code>&lt;Error&gt;&lt;Code&gt;AccessDenied&lt;/Code&gt;&lt;Message&gt;Access Denied&lt;/Message&gt;&lt;/Error&gt;</code> (HTTP 403 Forbidden!).</li>
+                </ol>
+            </div>
+
+            <!-- v60s3 13. Default-Deny Privacy Architecture -->
+            <div class="section-block" id="v60s3-section-13">
+                <h1 class="section-heading">13. 🔍 Why Direct S3 URLs Fail by Default (Default-Deny Privacy Architecture)</h1>
+                <p>Security Analysis: S3 Objects are 100% private by default. Unless you uncheck *Block Public Access* and attach a public *Bucket Policy*, anonymous internet requests to direct Object HTTPS URLs will always fail with HTTP 403 `AccessDenied`!</p>
+            </div>
+
+            <!-- v60s3 14. Instructor Support Guidelines -->
+            <div class="section-block" id="v60s3-section-14">
+                <h1 class="section-heading">14. 📧 Instructor Support &amp; Community Engagement Guidelines (`gaurav@learningocean.com`)</h1>
+                <p>Instructor Contact Note: Uploaded sample file contained instructor email <code>gaurav@learningocean.com</code>. Feel free to email video doubts and AWS course questions. Office work outsourcing requests will be ignored!</p>
+            </div>
+
+            <!-- v60s3 15. Open vs Direct URL Matrix -->
+            <div class="section-block" id="v60s3-section-15">
+                <h1 class="section-heading">15. 📊 Console "Open" vs Direct S3 URL Matrix</h1>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;">
+                        <thead>
+                            <tr style="background: var(--bg-card); border-bottom: 2px solid var(--border-color); color: var(--accent-aws);">
+                                <th style="padding: 10px;">Access Method</th>
+                                <th style="padding: 10px;">URL Mechanism</th>
+                                <th style="padding: 10px;">HTTP Result</th>
+                                <th style="padding: 10px;">Public Internet Access</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">Console "Open" Button</td>
+                                <td style="padding: 10px;">Presigned URL (Session signed)</td>
+                                <td style="padding: 10px; color: #10b981; font-weight: bold;">HTTP 200 OK</td>
+                                <td style="padding: 10px;">Authenticated Console Users Only</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">Direct Object HTTPS URL</td>
+                                <td style="padding: 10px;">Static Endpoint URL</td>
+                                <td style="padding: 10px; color: #ef4444; font-weight: bold;">HTTP 403 AccessDenied</td>
+                                <td style="padding: 10px; color: #ef4444;">Blocked by default privacy settings</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- v60s3 16. Senior Developer Scope -->
+            <div class="section-block" id="v60s3-section-16">
+                <h1 class="section-heading">16. 🎓 Senior Developer Scope</h1>
+                <p><strong>MUST KNOW:</strong></p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Creating S3 buckets with proper region selection and naming rules.</li>
+                    <li>Understanding default Block Public Access and SSE-S3 AES-256 encryption.</li>
+                    <li>Uploading objects via console, CLI, or SDKs.</li>
+                    <li>Difference between presigned console URLs and direct object endpoints.</li>
+                    <li>Debugging `AccessDenied` 403 errors on S3 object URLs.</li>
+                </ul>
+            </div>
+
+            <!-- v60s3 17. Interview Questions -->
+            <div class="section-block" id="v60s3-section-17">
+                <h1 class="section-heading">17. ❓ Interview Questions</h1>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q1. Why did creating a bucket named `gaurav` fail in the AWS Console?</strong></p>
+                    <blockquote>Because S3 bucket names must be globally unique across all AWS accounts worldwide. A bucket named `gaurav` already existed in another AWS account.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q2. Why does clicking the "Open" button in the AWS Console view the object, but copying the direct Object URL results in HTTP 403 AccessDenied?</strong></p>
+                    <blockquote>The "Open" button generates a temporary Presigned URL using the active console user's credentials. Direct Object URLs access the object anonymously, which is blocked by S3's default Block Public Access settings.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q3. What encryption is enabled by default when creating a new S3 bucket?</strong></p>
+                    <blockquote>Server-Side Encryption with Amazon S3 managed keys (SSE-S3 / AES-256) is enabled by default.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q4. Where does AWS store EBS Snapshots and Custom AMIs behind the scenes?</strong></p>
+                    <blockquote>AWS automatically stores EBS Snapshot blocks and Custom AMI disk images in AWS-managed hidden S3 buckets behind the scenes.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q5. What is the default public access setting when creating a new S3 bucket?</strong></p>
+                    <blockquote>By default, "Block all public access" is enabled, keeping the bucket and its objects completely private.</blockquote>
+                </div>
+            </div>
+
+            <!-- v60s3 18. Completion Criteria & Final Mental Model -->
+            <div class="section-block" id="v60s3-section-18">
+                <h1 class="section-heading">18. 🏁 Completion Criteria &amp; Final Mental Model</h1>
+                <p><strong>S3 Bucket Creation &amp; Object Access Flow:</strong></p>
+<pre><code>                    Create Bucket: `gaurav-youtube-v1` (ap-south-1)
+                                         │
+                                         ▼
+                     Upload File Object: `image.png`
+                                         │
+                 ┌───────────────────────┴───────────────────────┐
+                 ▼                                               ▼
+   Console "Open" Button Click                     Direct HTTPS URL Request
+                 │                                               │
+                 ▼                                               ▼
+  Generates Presigned Session URL                 Anonymous Access Request
+                 │                                               │
+                 ▼                                               ▼
+         HTTP 200 OK (View File)                       HTTP 403 AccessDenied</code></pre>
+            </div>
+
+            <!-- VIDEO 60 COMPLETE Card -->
+            <div class="doc-header-card" id="v60s3-section-completion" style="margin-top: 40px; border-color: var(--accent-aws);">
+                <h2 style="font-size: 26px; color: var(--accent-aws); margin-bottom: 16px;">✅ VIDEO 60 — COMPLETE</h2>
+                <h3 style="font-size: 18px; color: var(--text-main); margin-bottom: 12px;">AWS S3 First Bucket Creation Takeaway</h3>
+                <p>Creating your first S3 bucket demonstrates global naming uniqueness, default-deny privacy shields, drag &amp; drop object uploads, and presigned vs direct URL security behavior.</p>
+            </div>
+
+            <!-- ==================== VIDEO 61 PUBLIC S3 BUCKET & BUCKET POLICIES ==================== -->
+
+            <!-- Video 61 Header -->
+            <div class="doc-header-card" id="v61s3-header" style="margin-top: 60px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                    <span class="brand-badge" style="background: var(--accent-aws); color: #000;">AWS TUTORIALS — VIDEO 61</span>
+                    <span style="font-size: 13px; color: var(--text-muted);">Prerequisite: Video 60 S3 First Bucket</span>
+                </div>
+                <h1 style="font-size: 32px; color: var(--text-main); margin-bottom: 12px; line-height: 1.3;">AWS Tutorials - 61 Public your Bucket Object | Policy Generator | Allow Object to Public ( in Hindi)</h1>
+                <p style="font-size: 16px; color: var(--text-muted);"><strong>Main topic:</strong> Deep-dive into AWS S3 Bucket Naming Rules &amp; Syntax Errors, resolving the HTTP 403 `AccessDenied` error to make S3 objects publicly readable, step-by-step disabling of Block Public Access settings, using AWS Policy Generator to generate JSON Bucket Policies (`s3:GetObject`, Principal `*`), common ARN formatting traps (`arn:aws:s3:::bucket` vs `arn:aws:s3:::bucket/*`), saving policies, console "Public" badge verification, and testing anonymous HTTPS public access.</p>
+            </div>
+
+            <!-- v61s3 1. What You'll Learn -->
+            <div class="section-block" id="v61s3-section-1">
+                <h1 class="section-heading">1. 🎯 What You'll Learn</h1>
+                <p>By the end of this video, you should understand:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Detailed **S3 Bucket Naming Syntax Rules**: Uppercase character rules, length rules (3-63 chars), IPv4 address format restrictions, and hyphen position rules</li>
+                    <li>The core objective: Converting a private S3 bucket into a **Publicly Accessible Web Repository**</li>
+                    <li>**STEP 1:** Disabling the <em>Block Public Access (bucket settings)</em> security guardrail</li>
+                    <li>**STEP 2:** Opening and using the **AWS Policy Generator**</li>
+                    <li>Configuring Policy Generator fields: Type (`S3 Bucket Policy`), Effect (`Allow`), Principal (`*`), Action (`s3:GetObject`)</li>
+                    <li>**CRITICAL ARN ERROR FIX:** Why raw bucket ARN `arn:aws:s3:::bucketname` fails and appending `/*` (`arn:aws:s3:::bucketname/*`) is strictly required!</li>
+                    <li>Writing and applying a valid **JSON Public Read Bucket Policy**</li>
+                    <li>Verifying the S3 Console **"Public"** badge indicator</li>
+                    <li><strong>TEST 1:</strong> Accessing existing objects via Incognito HTTPS browser window (**HTTP 200 OK**)</li>
+                    <li><strong>TEST 2:</strong> Uploading new photos (`photo.jpg`) and verifying automatic public policy inheritance</li>
+                    <li>Security Governance Warning: Knowing when buckets MUST be private vs public</li>
+                </ul>
+            </div>
+
+            <!-- v61s3 2. Deep-Dive S3 Naming Rules & Violations -->
+            <div class="section-block" id="v61s3-section-2">
+                <h1 class="section-heading">2. ⚠️ Deep-Dive S3 Naming Rules &amp; Syntax Violation Errors</h1>
+                <p>Instructor Gaurav Sharma's Bucket Naming Rules Testing:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #ef4444; font-weight: bold;">S3 BUCKET NAMING SYNTAX CONSTRAINTS:</p>
+                    <ul style="padding-left: 20px; color: var(--text-muted); margin-top: 6px; margin-bottom: 0;">
+                        <li><strong>Uppercase Characters:</strong> `Gaurav-Youtube-V1` → <strong>FAIL! Error:</strong> <em>"Bucket name must not contain uppercase characters."</em></li>
+                        <li><strong>Length Limits:</strong> Must be between 3 and 63 characters long.</li>
+                        <li><strong>IP Address Format:</strong> Bucket names CANNOT be formatted as an IPv4 address (e.g. `192.168.1.1`).</li>
+                        <li><strong>Leading / Trailing Hyphens:</strong> `-gaurav-youtube-v1` → <strong>FAIL! Error:</strong> <em>"Bucket name must start and end with a lowercase letter or number."</em></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v61s3 3. The Goal — Public Read HTTPS Access -->
+            <div class="section-block" id="v61s3-section-3">
+                <h1 class="section-heading">3. 🔓 The Goal — Public Read Object Access over HTTPS</h1>
+                <p>Objective: Configure the bucket policy so that any user anywhere on the internet can open direct HTTPS Object URLs (e.g. `https://gaurav-youtube-v1.s3.ap-south-1.amazonaws.com/image.png`) in their browser without encountering HTTP 403 `AccessDenied`!</p>
+            </div>
+
+            <!-- v61s3 4. Step 1 — Disabling Block Public Access -->
+            <div class="section-block" id="v61s3-section-4">
+                <h1 class="section-heading">4. 🛡️ Step 1 — Disabling "Block Public Access" Guardrail</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>S3 Console → Select bucket <code>gaurav-youtube-v1</code> → Click <strong>Permissions</strong> tab.</li>
+                    <li>Locate <strong>Block public access (bucket settings)</strong> → Click <strong>Edit</strong>.</li>
+                    <li>Uncheck <strong>Block <em>all</em> public access</strong>.</li>
+                    <li>Click <strong>Save changes</strong> → In confirmation modal, type <code>"confirm"</code> → Click <strong>Confirm</strong>.</li>
+                </ol>
+            </div>
+
+            <!-- v61s3 5. Step 2 — Opening Policy Generator -->
+            <div class="section-block" id="v61s3-section-5">
+                <h1 class="section-heading">5. ⚡ Step 2 — Opening AWS Policy Generator</h1>
+                <p>Under Bucket policy → Click <strong>Edit</strong> → Click <strong>Policy generator</strong> link (opens AWS Policy Generator in a new tab).</p>
+            </div>
+
+            <!-- v61s3 6. Step 3 — Policy Generator Inputs -->
+            <div class="section-block" id="v61s3-section-6">
+                <h1 class="section-heading">6. 📜 Step 3 — Configuring Policy Generator Inputs (`s3:GetObject`, Principal `*`)</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Select Policy Type: Choose <strong>S3 Bucket Policy</strong>.</li>
+                    <li>Effect: Select <strong>Allow</strong>.</li>
+                    <li>Principal: Enter <code>*</code> (Wildcard representing anonymous internet users).</li>
+                    <li>AWS Service: Select <strong>Amazon S3</strong>.</li>
+                    <li>Actions: Search and check <code>GetObject (s3:GetObject)</code>.</li>
+                    <li>Amazon Resource Name (ARN): Paste bucket ARN.</li>
+                </ol>
+            </div>
+
+            <!-- v61s3 7. The Common ARN Formatting Trap -->
+            <div class="section-block" id="v61s3-section-7">
+                <h1 class="section-heading">7. ❌ The Common ARN Formatting Trap (`arn:aws:s3:::bucket` vs `arn:aws:s3:::bucket/*`)</h1>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #ef4444; font-weight: bold;">CRITICAL BUCKET POLICY ERROR &amp; FIX:</p>
+                    <p style="margin-top: 4px; margin-bottom: 8px; color: var(--text-muted);">If you paste raw bucket ARN <code>arn:aws:s3:::gaurav-youtube-v1</code>, AWS returns <em>"Unknown Error / Action does not apply to resource"</em> because <code>s3:GetObject</code> applies to <strong>objects inside the bucket</strong>, NOT the bucket container itself!</p>
+                    <p style="margin: 0; color: #10b981; font-weight: bold;">THE MANDATORY FIX:</p>
+                    <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted);">You MUST append <code>/*</code> to the bucket ARN: <code>arn:aws:s3:::gaurav-youtube-v1/*</code>. This explicitly targets all objects inside the bucket!</p>
+                </div>
+            </div>
+
+            <!-- v61s3 8. Valid Public Read Bucket Policy JSON -->
+            <div class="section-block" id="v61s3-section-8">
+                <h1 class="section-heading">8. 📄 Valid Public Read JSON Bucket Policy Document Structure</h1>
+                <p>Complete JSON Policy Code:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::gaurav-youtube-v1/*"
+    }
+  ]
+}</code></pre>
+            </div>
+
+            <!-- v61s3 9. Step 4 — Saving Policy & Public Badge -->
+            <div class="section-block" id="v61s3-section-9">
+                <h1 class="section-heading">9. 💾 Step 4 — Saving Policy &amp; Console "Public" Badge Verification</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Paste the generated JSON into S3 Console → Bucket Policy editor.</li>
+                    <li>Click <strong>Save changes</strong>.</li>
+                    <li>S3 Console updates bucket indicator badge to <strong>"Public"</strong> (displayed in red/orange warning text).</li>
+                </ol>
+            </div>
+
+            <!-- v61s3 10. Test 1 — Incognito HTTPS Verification -->
+            <div class="section-block" id="v61s3-section-10">
+                <h1 class="section-heading">10. 🧪 Test 1 — Incognito HTTPS Access Verification for Existing Files</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Copy Object URL: <code>https://gaurav-youtube-v1.s3.ap-south-1.amazonaws.com/image.png</code>.</li>
+                    <li>Open an Incognito / Private browser window (unauthenticated user).</li>
+                    <li>Paste Object URL → Press Enter.</li>
+                    <li>**SUCCESS RESULT:** **HTTP 200 OK!** Image renders cleanly in browser!</li>
+                </ol>
+            </div>
+
+            <!-- v61s3 11. Test 2 — Uploading New Photo -->
+            <div class="section-block" id="v61s3-section-11">
+                <h1 class="section-heading">11. 📤 Test 2 — Uploading New Photo &amp; Automatic Policy Inheritance</h1>
+                <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Upload a second photo file (e.g. `photo.jpg`) into the bucket.</li>
+                    <li>Copy `photo.jpg` Object URL → Paste into Incognito window.</li>
+                    <li>**SUCCESS RESULT:** Photo renders immediately! Every newly uploaded object inherits the bucket's public read policy automatically without modifying individual object ACLs!</li>
+                </ol>
+            </div>
+
+            <!-- v61s3 12. Presigned vs Static Public HTTPS URLs -->
+            <div class="section-block" id="v61s3-section-12">
+                <h1 class="section-heading">12. 🔑 Console Presigned "Open" URL vs Static Public HTTPS URL Anatomy</h1>
+                <p>URL Comparison:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li><strong>Presigned Session URL (Console "Open"):</strong> <code>https://gaurav-youtube-v1.s3.amazonaws.com/image.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=...&amp;X-Amz-Expires=300</code> (Temporary 5-minute access token).</li>
+                    <li><strong>Static Public HTTPS URL:</strong> <code>https://gaurav-youtube-v1.s3.ap-south-1.amazonaws.com/image.png</code> (Permanent public endpoint governed by Bucket Policy).</li>
+                </ul>
+            </div>
+
+            <!-- v61s3 13. Security Warning — Governance Rules -->
+            <div class="section-block" id="v61s3-section-13">
+                <h1 class="section-heading">13. 🛡️ Security Risk Warning — When SHOULD Buckets be Public vs Private?</h1>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid var(--accent-yellow); border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: var(--accent-yellow); font-weight: bold;">PRODUCTION SECURITY GOVERNANCE:</p>
+                    <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted);">
+                        • **PUBLIC BUCKETS:** Use ONLY for public assets (static web images, CSS/JS files, public download binaries, open data sets).
+                        <br>• **PRIVATE BUCKETS:** User database backups, customer PII, logs, financial records, and application secrets MUST ALWAYS keep *Block Public Access* enabled!
+                    </p>
+                </div>
+            </div>
+
+            <!-- v61s3 14. Bucket Policy Configuration Matrix -->
+            <div class="section-block" id="v61s3-section-14">
+                <h1 class="section-heading">14. 📊 Bucket Policy Configuration Matrix</h1>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;">
+                        <thead>
+                            <tr style="background: var(--bg-card); border-bottom: 2px solid var(--border-color); color: var(--accent-aws);">
+                                <th style="padding: 10px;">Setting</th>
+                                <th style="padding: 10px;">Private Default State</th>
+                                <th style="padding: 10px;">Public Read Enabled State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">Block Public Access</td>
+                                <td style="padding: 10px; color: #10b981;">Enabled (Block all public access)</td>
+                                <td style="padding: 10px; color: #ef4444; font-weight: bold;">Disabled (Unchecked)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">Bucket Policy JSON</td>
+                                <td style="padding: 10px; color: var(--text-muted);">None (Empty)</td>
+                                <td style="padding: 10px; color: #10b981; font-weight: bold;">`s3:GetObject` with Principal `*` on `bucket/*`</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px; font-weight: bold;">Direct Object HTTPS URL</td>
+                                <td style="padding: 10px; color: #ef4444;">HTTP 403 AccessDenied</td>
+                                <td style="padding: 10px; color: #10b981; font-weight: bold;">HTTP 200 OK (Publicly readable)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- v61s3 15. Senior Developer Scope -->
+            <div class="section-block" id="v61s3-section-15">
+                <h1 class="section-heading">15. 🎓 Senior Developer Scope</h1>
+                <p><strong>MUST KNOW:</strong></p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Writing S3 Bucket Policies in JSON syntax.</li>
+                    <li>Correctly formatting Resource ARNs with trailing `/*` for object actions.</li>
+                    <li>Disabling Block Public Access guardrails safely when required.</li>
+                    <li>Auditing public S3 buckets to prevent data leaks.</li>
+                </ul>
+            </div>
+
+            <!-- v61s3 16. Interview Questions -->
+            <div class="section-block" id="v61s3-section-16">
+                <h1 class="section-heading">16. ❓ Interview Questions</h1>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q1. What happens if you apply a Bucket Policy with `Action: s3:GetObject` on Resource `arn:aws:s3:::mybucket` without trailing `/*`?</strong></p>
+                    <blockquote>AWS returns an error indicating the action does not apply to the resource. `s3:GetObject` requires object-level targeting, which is specified by appending `/*` (e.g. `arn:aws:s3:::mybucket/*`).</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q2. What two steps are required to make an S3 bucket's objects publicly readable over HTTPS?</strong></p>
+                    <blockquote>1. Uncheck 'Block all public access' under Bucket Permissions. 2. Attach a JSON Bucket Policy granting `s3:GetObject` permission to Principal `*` on `arn:aws:s3:::bucketname/*`.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q3. Do newly uploaded objects in a public bucket automatically become public, or do you have to configure each object individually?</strong></p>
+                    <blockquote>Newly uploaded objects automatically inherit the bucket policy's public read permissions without needing individual object-level ACL modifications.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q4. Which S3 bucket naming rule is violated by the name `My-Bucket-2026`?</strong></p>
+                    <blockquote>S3 bucket names must not contain uppercase letters. `My-Bucket-2026` contains uppercase 'M' and 'B'.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q5. What tool provided in the AWS Console helps construct valid JSON Bucket Policies?</strong></p>
+                    <blockquote>The AWS Policy Generator.</blockquote>
+                </div>
+            </div>
+
+            <!-- v61s3 17. Completion Criteria & Final Mental Model -->
+            <div class="section-block" id="v61s3-section-17">
+                <h1 class="section-heading">17. 🏁 Completion Criteria &amp; Mental Model</h1>
+                <p><strong>Public S3 Object Authorization Engine:</strong></p>
+<pre><code>             Anonymous User Request: `https://bucket.s3.region.amazonaws.com/file.png`
+                                           │
+                                           ▼
+                    Evaluates S3 Block Public Access Setting
+                                           │
+                        (Must be DISABLED / Unchecked)
+                                           │
+                                           ▼
+                     Evaluates JSON Bucket Policy Statement
+                                           │
+            Matching Statement: Effect: Allow | Action: s3:GetObject
+                   Principal: * | Resource: `arn:aws:s3:::bucket/*`
+                                           │
+                                           ▼
+                             HTTP 200 OK (Public File Served!)</code></pre>
+            </div>
+
+            <!-- VIDEO 61 COMPLETE Card -->
+            <div class="doc-header-card" id="v61s3-section-completion" style="margin-top: 40px; border-color: var(--accent-aws);">
+                <h2 style="font-size: 26px; color: var(--accent-aws); margin-bottom: 16px;">✅ VIDEO 61 — COMPLETE</h2>
+                <h3 style="font-size: 18px; color: var(--text-main); margin-bottom: 12px;">AWS S3 Public Objects &amp; Policies Takeaway</h3>
+                <p>Disabling Block Public Access guardrails and attaching a valid `s3:GetObject` JSON Bucket Policy (`arn:aws:s3:::bucket/*`) allows public HTTPS access for web application assets.</p>
+            </div>
+
+            <!-- ==================== VIDEO 62 S3 OBJECT PROPERTIES & METADATA CONTENT ==================== -->
+
+            <!-- Video 62 Header -->
+            <div class="doc-header-card" id="v62s3-header" style="margin-top: 60px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                    <span class="brand-badge" style="background: var(--accent-aws); color: #000;">AWS TUTORIALS — VIDEO 62</span>
+                    <span style="font-size: 13px; color: var(--text-muted);">Prerequisite: Video 60 &amp; 61 S3 Bucket Creation &amp; Public Policies</span>
+                </div>
+                <h1 style="font-size: 32px; color: var(--text-main); margin-bottom: 12px; line-height: 1.3;">AWS Tutorials - 62 S3 Object - S3 Object Properties - S3 Object Metadata - S3 Object Key ( in Hindi)</h1>
+                <p style="font-size: 16px; color: var(--text-muted);"><strong>Main topic:</strong> Deep dive into Amazon S3 Object Properties, Object Metadata (System-defined vs User-defined), Entity Tags (ETag), Object Tags for Lifecycle management, demystifying the <strong>S3 Object Key</strong>, proving why true directory folders do NOT exist in object storage, how AWS Console simulates folders using key prefixes (<code>courses/gaurav/terraform.jpg</code>), and understanding S3 object size limits (5 GB Single <code>PUT</code> vs 5 TB Multipart Uploads).</p>
+            </div>
+
+            <!-- v62s3 1. What You'll Learn -->
+            <div class="section-block" id="v62s3-section-1">
+                <h1 class="section-heading">1. 🎯 What You'll Learn</h1>
+                <p>By the end of this video, you should understand:</p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>Detailed breakdown of S3 Object Properties in AWS Console (Owner ID, S3 URI, Region, Object ARN, Size, Type, Storage Class)</li>
+                    <li>Object Tagging (key-value metadata) for auto-expiring temporary files via Lifecycle Rules</li>
+                    <li>System-Defined Metadata vs User-Defined Metadata headers (<code>Content-Type</code>, <code>x-amz-meta-*</code>)</li>
+                    <li>What an Entity Tag (ETag) is and how it validates data integrity using MD5 hashes</li>
+                    <li>Demystifying the <strong>S3 Object Key</strong>: Why S3 is a flat key-value store and NOT a traditional hierarchical filesystem</li>
+                    <li>Proving the S3 Myth: Why folders do NOT exist in Amazon S3 under the hood</li>
+                    <li>How the AWS Management Console visually simulates folder structures using slash delimiters (<code>/</code>) and <strong>Prefixes</strong></li>
+                    <li>Comparative analysis: Root object <code>terraform.jpg</code> vs Nested object <code>courses/gaurav/terraform.jpg</code></li>
+                    <li>Why understanding S3 Prefixes is critical for IAM access control, Lifecycle rules, and batch operations</li>
+                    <li>S3 Payload Size Limits: 5 GB limit for single <code>PUT</code> uploads vs 5 TB max object size via <strong>Multipart Uploads</strong></li>
+                </ul>
+            </div>
+
+            <!-- v62s3 2. Navigating Object Properties in S3 Console -->
+            <div class="section-block" id="v62s3-section-2">
+                <h1 class="section-heading">2. 🔍 Navigating Object Properties in S3 Console</h1>
+                <p>When you click on any uploaded object in the Amazon S3 Management Console, AWS presents a comprehensive <strong>Object Overview / Properties tab</strong> containing essential attributes:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 20px; border-left: 4px solid var(--accent-aws); border-radius: 8px; margin-bottom: 16px;">
+                    <ul style="padding-left: 20px; color: var(--text-main); font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+                        <li><strong>Owner:</strong> The AWS Account Canonical User ID or IAM user that uploaded the file.</li>
+                        <li><strong>S3 URI:</strong> Unique S3 path format (e.g. <code>s3://gaurav-youtube-v1/terraform.jpg</code>) used by AWS CLI and SDKs.</li>
+                        <li><strong>AWS Region:</strong> The geographic region holding the bucket (e.g. <code>ap-south-1</code> Mumbai).</li>
+                        <li><strong>Object ARN:</strong> Amazon Resource Name (e.g. <code>arn:aws:s3:::gaurav-youtube-v1/terraform.jpg</code>) used in JSON Bucket Policies and IAM permissions.</li>
+                        <li><strong>Last Modified:</strong> Exact timestamp of the latest object creation or replacement.</li>
+                        <li><strong>Size:</strong> Exact binary payload size (e.g. <code>271.4 KB</code>).</li>
+                        <li><strong>Type / Content-Type:</strong> MIME type header (e.g. <code>image/jpeg</code> or <code>application/json</code>).</li>
+                        <li><strong>Object URL:</strong> Direct public HTTPS endpoint (e.g. <code>https://gaurav-youtube-v1.s3.ap-south-1.amazonaws.com/terraform.jpg</code>).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v62s3 3. Object Tags & Lifecycle Teaser -->
+            <div class="section-block" id="v62s3-section-3">
+                <h1 class="section-heading">3. 🏷️ S3 Object Tags &amp; Lifecycle Teaser</h1>
+                <p>Instructor Gaurav Sharma demonstrates adding <strong>Object Tags</strong> (key-value metadata pairs attached to specific files):</p>
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 20px; margin: 16px 0;">
+                    <h4 style="color: var(--accent-cyan); margin-top: 0; margin-bottom: 10px; font-size: 16px;">💡 Real-World Production Use Case: Automated 7-Day Cleanup Policy</h4>
+                    <p style="color: var(--text-main); font-size: 14px; margin-bottom: 10px;">
+                        Imagine you want temporary files (like invoice PDFs or user upload previews) to auto-delete after 7 days to save S3 storage costs:
+                    </p>
+                    <ol style="padding-left: 20px; color: var(--text-muted); font-size: 13.5px;">
+                        <li>Attach an Object Tag during upload: <code>Retention = Temporary</code>.</li>
+                        <li>Configure an S3 Lifecycle Rule targeting tag filter <code>Retention = Temporary</code>.</li>
+                        <li><strong>Result:</strong> AWS automatically purges ONLY objects with tag <code>Retention = Temporary</code> after 7 days while preserving permanent production images!</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- v62s3 4. System-Defined vs User-Defined Metadata -->
+            <div class="section-block" id="v62s3-section-4">
+                <h1 class="section-heading">4. 📊 System-Defined Metadata vs User-Defined Metadata</h1>
+                <p>Every S3 Object maintains HTTP response headers and custom metadata attached as name-value pairs:</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0;">
+                    <div style="background: rgba(30, 41, 59, 0.8); padding: 16px; border-radius: 8px; border-left: 4px solid var(--accent-aws);">
+                        <h4 style="color: var(--accent-aws); margin: 0 0 8px 0; font-size: 15px;">⚙️ System-Defined Metadata</h4>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Predefined HTTP headers managed by AWS or configured by the client:<br>
+                            • <code>Content-Type</code> (e.g. <code>image/jpeg</code>, <code>video/mp4</code>)<br>
+                            • <code>Content-Disposition</code> (e.g. <code>inline</code> or <code>attachment</code>)<br>
+                            • <code>Cache-Control</code> (e.g. <code>max-age=3600</code>)<br>
+                            • <code>Content-Encoding</code> (e.g. <code>gzip</code>)
+                        </p>
+                    </div>
+
+                    <div style="background: rgba(30, 41, 59, 0.8); padding: 16px; border-radius: 8px; border-left: 4px solid var(--accent-indigo);">
+                        <h4 style="color: var(--accent-indigo); margin: 0 0 8px 0; font-size: 15px;">👤 User-Defined Metadata</h4>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Custom key-value pairs stored with the object payload:<br>
+                            • Prefixed automatically by AWS as <code>x-amz-meta-*</code><br>
+                            • Example: <code>x-amz-meta-uploadedby: gaurav</code><br>
+                            • Example: <code>x-amz-meta-department: devops</code><br>
+                            • Retained with the object until updated or overwritten.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v62s3 5. What is an ETag in Amazon S3? -->
+            <div class="section-block" id="v62s3-section-5">
+                <h1 class="section-heading">5. 🧩 What is an ETag in Amazon S3?</h1>
+                <p>Instructor Gaurav Sharma highlights the <strong>ETag (Entity Tag)</strong> property appearing in the Object Overview:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid var(--accent-yellow); border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: var(--text-main);"><strong>Definition:</strong> An ETag is an HTTP header returned by S3 representing an MD5 hash digest of the object's data.</p>
+                    <p style="margin-top: 8px; margin-bottom: 0; color: var(--text-muted); font-size: 13.5px;">
+                        • For standard single-part uploads, the ETag is the exact 128-bit MD5 checksum string (e.g. <code>"5a38fc2834b6b6c..."</code>).<br>
+                        • <strong>Purpose:</strong> Used by client applications and browsers to verify file integrity and check if an object has changed without downloading the full payload.
+                    </p>
+                </div>
+            </div>
+
+            <!-- v62s3 6. Demystifying the "S3 Object Key" -->
+            <div class="section-block" id="v62s3-section-6">
+                <h1 class="section-heading">6. 🔑 Demystifying the "S3 Object Key"</h1>
+                <p>In Amazon S3, an object consists of <strong>Data (Payload) + Metadata + Key</strong>:</p>
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--accent-aws); border-radius: 8px; padding: 20px; margin: 16px 0;">
+                    <h3 style="color: var(--accent-aws); margin-top: 0; margin-bottom: 10px; font-size: 18px;">🔑 What is an "Object Key"?</h3>
+                    <p style="color: var(--text-main); font-size: 14.5px; margin-bottom: 8px;">
+                        The <strong>Key</strong> is the unique string name assigned to an object inside a bucket. Think of a bucket as a giant flat hash map <code>Dictionary&lt;Key, Payload&gt;</code>:
+                    </p>
+                    <pre style="font-size: 13px; margin: 0;"><code># Key string examples:
+Key 1: "terraform.jpg"
+Key 2: "courses/terraform.jpg"
+Key 3: "courses/gaurav/terraform.jpg"</code></pre>
+                </div>
+            </div>
+
+            <!-- v62s3 7. Myth: "Folders Do Not Exist in S3" -->
+            <div class="section-block" id="v62s3-section-7">
+                <h1 class="section-heading">7. 📁 Myth: "Folders Do Not Exist in S3"</h1>
+                <p>Instructor Gaurav Sharma addresses a fundamental cloud architectural misconception:</p>
+                <blockquote style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.1); padding: 18px 22px; border-radius: 0 8px 8px 0;">
+                    <h4 style="color: #ef4444; margin-top: 0; margin-bottom: 6px; font-size: 16px;">⚠️ THE GREAT CLOUD ARCHITECT TRUTH</h4>
+                    <p style="margin: 0; color: var(--text-main); font-size: 14.5px;">
+                        "1 minute ago I created a folder named <code>courses</code> in AWS Console, but now I am telling you that <strong>FOLDERS DO NOT EXIST IN S3!</strong> S3 is a flat object store. There are no subdirectories, OS inode trees, or nested file tables inside S3 buckets!"
+                    </p>
+                </blockquote>
+            </div>
+
+            <!-- v62s3 8. Console Virtual Folder Simulation -->
+            <div class="section-block" id="v62s3-section-8">
+                <h1 class="section-heading">8. ⚡ Console Virtual Folder Simulation</h1>
+                <p>If true folders do not exist in S3, why does the AWS Management Console show folder icons and directory trees?</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 18px; border-left: 4px solid var(--accent-cyan); border-radius: 6px; margin: 16px 0;">
+                    <h4 style="color: var(--accent-cyan); margin-top: 0; margin-bottom: 8px; font-size: 16px;">🖥️ How AWS Web UI Tricks Your Eyes using Slash Delimiters (`/`)</h4>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px;">
+                        AWS Web UI reads the object key string (e.g. <code>courses/gaurav/terraform.jpg</code>) and automatically parses the slash (<code>/</code>) characters:
+                    </p>
+                    <ul style="padding-left: 20px; color: var(--text-main); font-size: 13.5px; margin-bottom: 0;">
+                        <li>Everything before the final slash is extracted as the <strong>Prefix</strong> (<code>courses/gaurav/</code>).</li>
+                        <li>The AWS Web UI groups all objects sharing the prefix <code>courses/</code> and renders a virtual yellow folder icon so humans feel comfortable browsing it like a Windows/Linux filesystem!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v62s3 9. Root vs Subfolder Upload Test -->
+            <div class="section-block" id="v62s3-section-9">
+                <h1 class="section-heading">9. 🧪 Root vs Subfolder Upload Test</h1>
+                <p>Instructor's empirical demonstration uploading <code>terraform.jpg</code> to two different locations:</p>
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin: 16px 0;">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div style="background: rgba(30, 41, 59, 0.8); padding: 14px 18px; border-left: 4px solid var(--accent-green); border-radius: 4px;">
+                            <strong style="color: var(--accent-green); font-size: 14px;">Location A: Uploaded directly to Bucket Root</strong>
+                            <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted); font-size: 13.5px;">
+                                Bucket: <code>gaurav-youtube-v1</code> | Object Key: <code style="color: #ffffff; font-weight: bold;">terraform.jpg</code><br>
+                                Prefix: <em>None (empty string)</em>
+                            </p>
+                        </div>
+
+                        <div style="background: rgba(30, 41, 59, 0.8); padding: 14px 18px; border-left: 4px solid var(--accent-yellow); border-radius: 4px;">
+                            <strong style="color: var(--accent-yellow); font-size: 14px;">Location B: Uploaded inside Virtual Folder 'courses'</strong>
+                            <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted); font-size: 13.5px;">
+                                Bucket: <code>gaurav-youtube-v1</code> | Object Key: <code style="color: #ffffff; font-weight: bold;">courses/terraform.jpg</code><br>
+                                Prefix: <code style="color: var(--accent-aws);">courses/</code>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v62s3 10. Nested Virtual Folders Test -->
+            <div class="section-block" id="v62s3-section-10">
+                <h1 class="section-heading">10. 🧪 Nested Virtual Folders Test (`courses/gaurav/terraform.jpg`)</h1>
+                <p>Instructor creates a subfolder <code>gaurav</code> inside <code>courses</code> and uploads <code>terraform.jpg</code>:</p>
+<pre><code># Object Key inspection:
+Key Name: "courses/gaurav/terraform.jpg"
+
+# Prefix breakdown:
+File Name: "terraform.jpg"
+Prefix:    "courses/gaurav/"   <-- Full prefix string before file name!</code></pre>
+                <p><strong>Question:</strong> What is the prefix for this file? Is it <code>courses</code>, <code>gaurav</code>, or <code>courses/gaurav/</code>?</p>
+                <p><strong>Answer:</strong> The prefix is the ENTIRE leading string path: <strong><code>courses/gaurav/</code></strong>!</p>
+            </div>
+
+            <!-- v62s3 11. Why Object Prefixes Matter in DevOps -->
+            <div class="section-block" id="v62s3-section-11">
+                <h1 class="section-heading">11. 🎯 Why Object Prefixes Matter in DevOps</h1>
+                <p>Understanding S3 Prefixes is critical for senior developers and cloud engineers:</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid var(--accent-aws); border-radius: 6px; margin-bottom: 16px;">
+                    <ul style="padding-left: 20px; color: var(--text-main); font-size: 13.5px; display: flex; flex-direction: column; gap: 8px;">
+                        <li><strong>1. Lifecycle Rule Cleanup:</strong> Delete all temporary logs matching prefix <code>logs/2026/</code> after 30 days.</li>
+                        <li><strong>2. AWS CLI Batch Operations:</strong> <code>aws s3 rm s3://bucket/courses/ --recursive</code> targets all keys starting with prefix <code>courses/</code>.</li>
+                        <li><strong>3. IAM Policy Scoping:</strong> Restrict an IAM user to only access objects with prefix <code>home/gaurav/*</code>.</li>
+                        <li><strong>4. S3 Event Notifications:</strong> Trigger AWS Lambda only when an object with prefix <code>uploads/pdf/</code> is created.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v62s3 12. 5 GB Single PUT Upload Limit -->
+            <div class="section-block" id="v62s3-section-12">
+                <h1 class="section-heading">12. 📦 5 GB Single PUT Upload Limit</h1>
+                <p>What is the maximum file size you can upload to Amazon S3 in a single HTTP request?</p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 16px; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #ef4444; font-weight: bold;">Single HTTP PUT Request Limit = 5 GB!</p>
+                    <p style="margin-top: 4px; margin-bottom: 0; color: var(--text-muted); font-size: 13.5px;">
+                        If you attempt to upload a single 10 GB video file or 50 GB database dump using a standard single HTTP <code>PUT</code> call, S3 will reject the request with an HTTP error!
+                    </p>
+                </div>
+            </div>
+
+            <!-- v62s3 13. Multipart Upload Architecture -->
+            <div class="section-block" id="v62s3-section-13">
+                <h1 class="section-heading">13. 🚀 Multipart Upload Architecture (Up to 5 TB Total Object Size)</h1>
+                <p>How do cloud engineers upload giant files (100 GB - 5 TB) to Amazon S3?</p>
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--accent-aws); border-radius: 8px; padding: 20px; margin: 16px 0;">
+                    <h3 style="color: var(--accent-aws); margin-top: 0; margin-bottom: 10px; font-size: 18px;">⚡ S3 Multipart Upload Engine (Max 5 TB per Object)</h3>
+                    <p style="color: var(--text-main); font-size: 14px; margin-bottom: 12px;">
+                        When dealing with files larger than 100 MB (up to 5 TB total size), AWS recommended practice is <strong>Multipart Upload</strong>:
+                    </p>
+<pre><code>Large 100 GB File ──► Split into 20 Parts (5 GB each)
+                           │
+    ┌──────────────────────┼──────────────────────┐
+    ▼                      ▼                      ▼
+Upload Part 1          Upload Part 2          Upload Part 20 (Parallel Streams!)
+    │                      │                      │
+    └──────────────────────┼──────────────────────┘
+                           ▼
+             S3 Reassembles into 1 Unified Object!</code></pre>
+                    <ul style="padding-left: 20px; color: var(--text-muted); font-size: 13.5px; margin-top: 10px;">
+                        <li><strong>Part Size Range:</strong> 5 MB to 5 GB per part.</li>
+                        <li><strong>Part Count Limit:</strong> 1 to 10,000 parts per object.</li>
+                        <li><strong>Max Object Capacity:</strong> <strong>5 TB (Terabytes)</strong> total size!</li>
+                        <li><strong>Benefit:</strong> Fast parallel streaming network throughput &amp; automatic pause/resume on network dropouts!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v62s3 14. Key vs Directory Hierarchy Matrix -->
+            <div class="section-block" id="v62s3-section-14">
+                <h1 class="section-heading">14. 📊 Key vs Directory Hierarchy Matrix</h1>
+                <p>Comparing traditional Linux OS Filesystems vs Amazon S3 Flat Key-Value Namespace:</p>
+                <div style="overflow-x: auto; margin: 16px 0;">
+                    <table style="width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border-color); font-size: 13.5px;">
+                        <thead>
+                            <tr style="background: rgba(15, 23, 42, 0.8); border-bottom: 2px solid var(--accent-aws);">
+                                <th style="padding: 12px; text-align: left; color: var(--accent-aws);">Feature</th>
+                                <th style="padding: 12px; text-align: left; color: var(--accent-cyan);">Traditional Linux/Windows OS</th>
+                                <th style="padding: 12px; text-align: left; color: var(--accent-indigo);">Amazon S3 Object Store</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 12px; font-weight: bold; color: var(--text-main);">Storage Model</td>
+                                <td style="padding: 12px; color: var(--text-muted);">Hierarchical Tree (Directories &amp; Inodes)</td>
+                                <td style="padding: 12px; color: var(--text-muted);">Flat Key-Value Namespace</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 12px; font-weight: bold; color: var(--text-main);">Folder Concept</td>
+                                <td style="padding: 12px; color: var(--text-muted);">Physical Directory container object</td>
+                                <td style="padding: 12px; color: var(--text-muted);">Virtual simulation via Slash (<code>/</code>) Prefixes</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 12px; font-weight: bold; color: var(--text-main);">Full Path Identifier</td>
+                                <td style="padding: 12px; color: var(--text-muted);"><code>/var/www/html/index.html</code></td>
+                                <td style="padding: 12px; color: var(--text-muted);">Object Key: <code>var/www/html/index.html</code></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 12px; font-weight: bold; color: var(--text-main);">Single File Upload Limit</td>
+                                <td style="padding: 12px; color: var(--text-muted);">Limited by partition block size</td>
+                                <td style="padding: 12px; color: var(--text-muted);">5 GB (Single PUT) / 5 TB (Multipart)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; font-weight: bold; color: var(--text-main);">Metadata Support</td>
+                                <td style="padding: 12px; color: var(--text-muted);">Basic POSIX permissions (chmod, chown)</td>
+                                <td style="padding: 12px; color: var(--text-muted);">System &amp; User-Defined (<code>x-amz-meta-*</code>), ETag, Tags</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- v62s3 15. Senior Developer Scope -->
+            <div class="section-block" id="v62s3-section-15">
+                <h1 class="section-heading">15. 🎓 Senior Developer Scope</h1>
+                <p><strong>MUST KNOW:</strong></p>
+                <ul style="padding-left: 20px; color: var(--text-muted); margin-bottom: 16px;">
+                    <li>S3 is a flat key-value store; directories/folders do not exist natively.</li>
+                    <li>Object Key structure: prefix + object name (e.g. <code>courses/gaurav/terraform.jpg</code>).</li>
+                    <li>ETag HTTP header as MD5 checksum for verifying data integrity.</li>
+                    <li>System-defined metadata (<code>Content-Type</code>) vs User-defined metadata (<code>x-amz-meta-*</code>).</li>
+                    <li>Single <code>PUT</code> upload limit is 5 GB; use Multipart Upload for files &gt;100 MB up to 5 TB.</li>
+                </ul>
+            </div>
+
+            <!-- v62s3 16. Interview Questions -->
+            <div class="section-block" id="v62s3-section-16">
+                <h1 class="section-heading">16. ❓ Interview Questions</h1>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q1. Do real directory folders exist inside Amazon S3 buckets? Explain how AWS Console shows folders.</strong></p>
+                    <blockquote>No. S3 is a flat key-value namespace. AWS Console parses slash delimiters (`/`) in object key strings (e.g. `courses/gaurav/photo.jpg`) and visually renders prefixes as virtual yellow folder icons.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q2. What is the Object Key for a file displayed in AWS Console as `/courses/gaurav/terraform.jpg`?</strong></p>
+                    <blockquote>The Object Key is `courses/gaurav/terraform.jpg` and its prefix is `courses/gaurav/`.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q3. What is the maximum size of a single object uploaded in a single HTTP PUT request to S3?</strong></p>
+                    <blockquote>5 GB (Gigabytes).</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q4. How can you upload a 100 GB database dump file to Amazon S3?</strong></p>
+                    <blockquote>By using S3 Multipart Upload, which splits the payload into parts (5 MB to 5 GB each), uploads them in parallel streams, and reassembles them into a single object up to 5 TB in size.</blockquote>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <p><strong>Q5. What is the difference between System-Defined and User-Defined Metadata in Amazon S3?</strong></p>
+                    <blockquote>System-Defined Metadata consists of HTTP headers managed by AWS or configured by clients (like `Content-Type`), whereas User-Defined Metadata consists of custom key-value pairs stored with prefix `x-amz-meta-*`.</blockquote>
+                </div>
+            </div>
+
+            <!-- v62s3 17. Completion Criteria & Final Mental Model -->
+            <div class="section-block" id="v62s3-section-17">
+                <h1 class="section-heading">17. 🏁 Completion Criteria &amp; Mental Model</h1>
+                <p><strong>S3 Object Key-Value Namespace &amp; Prefix Parsing Engine:</strong></p>
+<pre><code>           Upload: `courses/gaurav/terraform.jpg` (Payload: 271 KB)
+                                      │
+                                      ▼
+                        S3 Storage Engine Flat Map:
+         `Key: "courses/gaurav/terraform.jpg"` ──► Payload & Metadata
+                                      │
+                                      ▼
+                 AWS Web Console UI Key Parsing Engine:
+        Splits by `/`: Prefix = "courses/gaurav/" | File = "terraform.jpg"
+                                      │
+                                      ▼
+           Renders: 📁 courses ──► 📁 gaurav ──► 🖼️ terraform.jpg</code></pre>
+            </div>
+
+            <!-- VIDEO 62 COMPLETE Card -->
+            <div class="doc-header-card" id="v62s3-section-completion" style="margin-top: 40px; border-color: var(--accent-aws);">
+                <h2 style="font-size: 26px; color: var(--accent-aws); margin-bottom: 16px;">✅ VIDEO 62 — COMPLETE</h2>
+                <h3 style="font-size: 18px; color: var(--text-main); margin-bottom: 12px;">AWS S3 Object Properties, Metadata &amp; Key Takeaway</h3>
+                <p>S3 is a flat key-value store with 5 GB single PUT / 5 TB Multipart upload limits. Folders do not exist natively; AWS Console parses slash prefixes (`courses/gaurav/`) to simulate virtual directory trees.</p>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+    <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const backToTopBtn = document.getElementById('backToTop');
+        const sidebarSearchInput = document.getElementById('sidebarSearchInput');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        // Mobile drawer toggle
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+        }
+
+        // Close mobile drawer on link click
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 1024 && sidebar) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        });
+
+        // Sidebar Video Number & Topic Search Filter
+        if (sidebarSearchInput) {
+            sidebarSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const videoGroups = document.querySelectorAll('.nav-video-group');
+
+                videoGroups.forEach(group => {
+                    const groupTitle = group.querySelector('.nav-section-title span').textContent.toLowerCase();
+                    const items = group.querySelectorAll('.nav-item');
+                    let groupMatches = groupTitle.includes(query);
+                    let hasMatchingChild = false;
+
+                    items.forEach(item => {
+                        const linkText = item.textContent.toLowerCase();
+                        if (query === '' || linkText.includes(query) || groupMatches) {
+                            item.style.display = 'block';
+                            hasMatchingChild = true;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+
+                    if (query === '' || groupMatches || hasMatchingChild) {
+                        group.style.display = 'block';
+                        if (query !== '') {
+                            group.classList.remove('collapsed');
+                        }
+                    } else {
+                        group.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Scroll spy & Back to top visibility
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 400) {
+                backToTopBtn.classList.add('visible');
+            } else {
+                backToTopBtn.classList.remove('visible');
+            }
+
+            const sections = document.querySelectorAll('.section-block, .doc-header-card');
+            let current = '';
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                if (window.scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (current && link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        if (backToTopBtn) {
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+</html>
